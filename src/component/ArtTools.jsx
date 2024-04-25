@@ -16,7 +16,7 @@ function convertToColorP(r,g,b,string) {
 }
 
 function convertTextToColor(input){
-    const strings = input.split('%')
+    const strings = input.replaceAll('|', '%').split('%')
     let output=[];
 
     strings.forEach((string)=>{
