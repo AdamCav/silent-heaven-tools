@@ -1,7 +1,7 @@
 
 import ArtTools from './component/ArtTools';
 import ClothingTools from './component/ClothingTools';
-import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
+import { Routes, Route, HashRouter } from "react-router-dom";
 
 function App() {
   return (
