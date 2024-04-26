@@ -15,7 +15,6 @@ function convertToColorP(r,g,b,string) {
 
 function generateColorButtons() {
     const output = [];
-    let count = 0;
     for (let r=0;r<6;r++){
         for (let g=0;g<6;g++){
 
