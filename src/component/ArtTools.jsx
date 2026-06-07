@@ -63,7 +63,7 @@ function ArtTools(props) {
         <div style={{backgroundColor: 'black',
         fontFamily: 'monospace',
         position: 'fixed',
-        top: '0',
+        top: '42px',
         bottom: '0',
         left: '0',
         right: '0',

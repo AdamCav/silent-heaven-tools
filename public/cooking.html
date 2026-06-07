@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Command Builder</title>
+<style>
+  :root{
+    --bg:#1d1a17; --panel:#272320; --panel2:#312c27; --line:#403a33;
+    --text:#ece3d8; --muted:#a99e90; --accent:#e0a458; --accent2:#7fae6b;
+    --danger:#d77a6b; --chip:#3a342e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.45}
+  header{padding:18px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+  h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .tabs{display:flex;gap:4px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{padding:10px 16px;cursor:pointer;color:var(--muted);border:none;background:none;font-size:14px;border-bottom:2px solid transparent}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  .view{display:none}
+  .view.active{display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px}
+  select,input[type=text],input[type=number],textarea{width:100%;background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);border-radius:7px;padding:9px 10px;font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:90px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .search{margin-bottom:8px}
+  .subtabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .subtab{padding:5px 10px;font-size:12px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--muted);border-radius:6px;cursor:pointer}
+  .subtab.active{color:var(--accent);border-color:var(--accent);background:var(--chip)}
+  .cat-items{display:flex;padding:2px 0;gap:6px;flex-wrap:wrap}
+  .grouplabel{width:100%;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:8px 0 2px}
+  .pill{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:12.5px;
+    cursor:pointer;color:var(--text)}
+  .pill:hover{border-color:var(--accent)}
+  .pill.added{opacity:.4;cursor:default}
+  .pill .num{color:var(--muted);margin-right:5px}
+  .selected{display:flex;flex-direction:column;gap:6px}
+  .sel-row{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:7px;padding:7px 9px;font-size:13.5px}
+  .sel-row .grow{flex:1}
+  .sel-row .cmd{color:var(--muted);font-size:12px}
+  .sel-row button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 6px}
+  .sel-row button:hover{color:var(--danger)}
+  .count{font-size:12px;color:var(--muted)}
+  .count.full{color:var(--danger)}
+  button.btn{background:var(--accent);color:#231d16;border:none;border-radius:7px;padding:9px 14px;
+    font-weight:600;cursor:pointer;font-size:13.5px}
+  button.btn:hover{filter:brightness(1.08)}
+  button.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .out{background:#15120f;border:1px solid var(--line);border-radius:8px;padding:14px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;white-space:pre-wrap;word-break:break-word}
+  .out .step{display:flex;gap:10px;padding:1px 0}
+  .out .inp{color:var(--accent);min-width:auto;font-weight:600}
+  .out .ann{color:var(--muted)}
+  .warn{color:var(--danger);font-size:12.5px;margin-top:8px}
+  .ok{color:var(--accent2)}
+  .toprow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .hint{font-size:12.5px;color:var(--muted);margin:6px 0}
+  .saved{color:var(--accent2);font-size:12.5px;margin-left:8px}
+  code{background:var(--panel2);padding:1px 5px;border-radius:4px}
+  details summary{cursor:pointer;color:var(--accent);font-size:14px;margin-bottom:8px}
+  .copybtns{display:flex;gap:8px;margin:10px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>Recipe Command Builder</h1>
+  <p>Pick your ingredients, method, taste and presentation &mdash; get the exact menu inputs to type in-game.</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-view="build">Build Recipe</button>
+  <button class="tab" data-view="lists">My Ingredients</button>
+  <button class="tab" data-view="mt">Methods &amp; Tastes</button>
+  <button class="tab" data-view="help">Help</button>
+</div>
+
+<main>
+  <!-- BUILD -->
+  <section class="view active" id="build">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>1. Choose ingredients <span class="count" id="count">(0 / 10)</span></h2>
+          <input class="search" id="search" type="text" placeholder="Search all ingredients...">
+          <div class="subtabs" id="catTabs"></div>
+          <div id="picker"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Selected</h2>
+          <div class="selected" id="selected"></div>
+          <p class="hint" id="selHint">No ingredients yet. Click pills on the left to add (max 10).</p>
+        </div>
+        <div class="card">
+          <h2>2. Finish the recipe</h2>
+          <div class="row2">
+            <div><label>Cooking method</label><select id="method"></select></div>
+            <div><label>Primary taste</label><select id="taste"></select></div>
+          </div>
+          <label>Presentation</label><select id="pres"></select>
+          <label>Name <span class="hint" style="text-transform:none">(no punctuation, max 40)</span></label>
+          <input id="name" type="text" maxlength="60" placeholder="ripped bagel">
+          <label>Description <span class="hint" style="text-transform:none">(max 500)</span></label>
+          <textarea id="desc" maxlength="600" placeholder="It's a ripped up bagel."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toprow">
+        <h2 style="margin:0">3. Commands to type</h2>
+        <div class="copybtns">
+          <button class="btn ghost" id="copyInputs">Copy inputs only</button>
+          <button class="btn" id="copyAnnot">Copy with notes</button>
+        </div>
+      </div>
+      <p class="hint">Open the cooking menu in-game, then enter each line below in order (press Enter after each).</p>
+      <div class="out" id="output"></div>
+      <div class="warn" id="warnings"></div>
+    </div>
+  </section>
+
+  <!-- LISTS -->
+  <section class="view" id="lists">
+    <div class="card">
+      <h2>Load your ingredients</h2>
+      <p class="hint">Ingredient numbers depend on your character's Cooking skill, so they differ per character.
+        In-game, open <b>Add new recipe</b> and step through each category (pick a category number, then press
+        <code>x</code> to go back) so every <code>SELECT INGREDIENT</code> list scrolls past &mdash; like the
+        transcript you'd copy from your client. Paste that whole chunk below and it sorts each list into the right
+        category automatically &mdash; using the category numbers you typed when present, otherwise assuming the lists
+        appear in category order (Basics first, Condiments last). Nothing is loaded until you paste your own, so it
+        only ever shows ingredients your character has actually seen.</p>
+      <label>Paste game text</label>
+      <textarea id="pasteAll" style="min-height:240px" placeholder="Paste the cooking menu output here (category menus + SELECT INGREDIENT lists)..."></textarea>
+      <div class="toprow" style="margin-top:10px">
+        <button class="btn" id="loadPaste">Load ingredients</button>
+        <button class="btn ghost" id="resetLists">Clear all</button>
+        <span class="saved" id="savedMsg"></span>
+      </div>
+      <div class="hint" id="loadReport"></div>
+    </div>
+  </section>
+
+  <!-- METHODS & TASTES -->
+  <section class="view" id="mt">
+    <div class="card">
+      <h2>Cooking methods &amp; tastes</h2>
+      <p class="hint">Cooking methods are character-specific (they depend on your Cooking skill), so none are bundled &mdash;
+        paste your in-game <code>COOKING METHOD</code> list into the box below and save. Tastes are a fixed list and come
+        pre-filled.</p>
+      <div class="toprow">
+        <button class="btn" id="saveMt">Save</button>
+        <button class="btn ghost" id="resetMt">Reset to defaults</button>
+        <span class="saved" id="savedMt"></span>
+      </div>
+      <div class="row2">
+        <div><label>Cooking methods</label><textarea id="ed_methods" style="min-height:320px"></textarea></div>
+        <div><label>Primary tastes</label><textarea id="ed_tastes" style="min-height:320px"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HELP -->
+  <section class="view" id="help">
+    <div class="card">
+      <h2>How it works</h2>
+      <p class="hint" style="font-size:13.5px;line-height:1.6">
+        This mirrors the in-game cooking menu. To make a recipe you open the cooking menu, choose
+        <b>Manage recipes</b> &rarr; <b>Add new recipe</b>, then for every ingredient you pick a
+        <b>category</b> number followed by the <b>ingredient</b> number. After ingredients you choose
+        <b>Done</b> (option 11), then a cooking method, a primary taste, type a description, choose a
+        presentation, and type a name.<br><br>
+        The <b>Commands to type</b> box gives you those inputs in order. Because the menus are numbered and
+        those numbers shift with your character's Cooking skill, load your own lists under
+        <b>My Ingredients</b> and <b>Methods &amp; Tastes</b> so the generated numbers match what you see.<br><br>
+        Everything you save stays in this browser (localStorage). Bookmark or keep this file and your lists persist.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- default data (max-skill lists) ---------- */
+const CAT_NAMES = ["Basics","Proteins","Dairy","Vegetables & Grains","Fruits & Jams",
+  "Nuts, Spreads & Seeds","Oils, Juices, Milks & More","Herbs & Spices","Condiments"];
+
+// No default ingredients or cooking methods are bundled (both are character-specific).
+// Players load their own via the "My Ingredients" and "Methods & Tastes" tabs.
+const DEF_TASTES=["Alcoholic kick","Acidic flavor","Bitterness","Blandness","Buttery flavor","Chewy texture","Creaminess","Crisp taste","Crispiness","Crunchiness","Freshness","Earthy taste","Fiery taste","Firmness","Fluffy texture","Fruitiness","Greasy texture","Herbaceous taste","Moistness","Saltiness","Savory taste","Slimy texture","Smoothness","Soft texture","Sourness","Spiciness","Stickiness","Sugary taste","Sweet flavor","Tart flavor","Watery texture","Yeast"];
+const PRESENTATION=["Bag of","Bowl of","Bottle of","Bunch of","Bundle of","Carafe of","Casserole of","Cup of","Cut of","Dish of","Glass of","Handful of","Jar of","Jug of","Mug of","Pan of","Pitcher of","Plate of","Platter of","Pot of","Serving of","Single","Shot of","Side of","Slice of","Tray of"];
+
+/* ---------- storage ---------- */
+const LS = {
+  ing:'gc_ingredients_v1', methods:'gc_methods_v1', tastes:'gc_tastes_v1'
+};
+function load(key,fallback){
+  try{const v=localStorage.getItem(key);return v?JSON.parse(v):fallback;}catch(e){return fallback;}
+}
+function save(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+
+/* ---------- parser: pull "N: name" pairs from raw game text ---------- */
+function parseList(text){
+  const re=/(\d+)\s*:\s*([^\n]*?)(?=\s{2,}\d+\s*:|\s{2,}[Xx]\s*:|\s*$)/gm;
+  const out=[]; let m;
+  while((m=re.exec(text))){
+    let name=m[2].trim();
+    if(!name) continue;
+    if(/^back to categories/i.test(name)) continue;
+    if(/^(cancel|start over|done with|back)\b/i.test(name)) continue;
+    out.push({num:parseInt(m[1],10),name:name});
+  }
+  return out;
+}
+// {num,name}[] -> editable text, preserving each item's real number
+function listToText(arr){return arr.map(x=>x.num+": "+x.name).join("\n");}
+
+/* Smart single-paste: pull each category's SELECT INGREDIENT list out of a whole
+   cooking-menu transcript. Category is inferred from the standalone number the
+   player typed just before each SELECT INGREDIENT screen. */
+function parseSinglePaste(text){
+  const HEADERS=/(ADD INGREDIENTS|SELECT INGREDIENT|COOKING METHOD|DESIRED TASTE|WRITE DESCRIPTION|CHOOSE PRESENTATION|GIVE IT A NAME|RECIPE REVIEW)/g;
+  // positions of every SELECT INGREDIENT screen
+  const starts=[]; const selRe=/SELECT INGREDIENT/g; let sm;
+  while((sm=selRe.exec(text))) starts.push(sm.index);
+  const result={};
+  let expected=1; // fallback when no echoed number: assume lists are in category order
+  for(let i=0;i<starts.length;i++){
+    const bodyStart=starts[i]+'SELECT INGREDIENT'.length;
+    HEADERS.lastIndex=bodyStart;
+    const hm=HEADERS.exec(text);
+    const items=parseList(text.slice(bodyStart, hm?hm.index:text.length));
+    if(!items.length) continue;
+    // did the player type a category number (echo) since the previous screen?
+    const win=text.slice(i>0?starts[i-1]:0, starts[i]);
+    const dre=/^[^\S\n]*([1-9])[^\S\n]*$/gm; let dm, echo=null;
+    while((dm=dre.exec(win))) echo=parseInt(dm[1],10);
+    let cat=(echo!=null)?echo:expected;
+    if(cat<1||cat>9) continue;
+    result[cat]=items;       // later passes overwrite earlier overview passes
+    expected=cat+1;          // next list (if also un-echoed) is the next category
+  }
+  return result;
+}
+
+/* ---------- state ---------- */
+let ingData = load(LS.ing,null);   // {1:[{num,name}],...} or null
+let methodsData = load(LS.methods,null);
+let tastesData = load(LS.tastes,null);
+
+function ensureDefaults(){
+  if(!ingData){ingData={};for(let c=1;c<=9;c++){ingData[c]=[];}} // start empty; player loads their own
+  if(!methodsData){methodsData=[];} // start empty; player loads their own methods
+  if(!tastesData){tastesData=DEF_TASTES.map((n,i)=>({num:i+1,name:n}));}
+}
+ensureDefaults();
+
+let selected=[]; // {cat,catNum,num,name}
+
+/* ---------- build tab rendering ---------- */
+const pickerEl=document.getElementById('picker');
+const catTabsEl=document.getElementById('catTabs');
+let activeCat=1;
+function renderCatTabs(){
+  catTabsEl.innerHTML='';
+  for(let c=1;c<=9;c++){
+    const b=document.createElement('button');
+    b.className='subtab'+(c===activeCat?' active':'');
+    b.textContent=CAT_NAMES[c-1];
+    b.onclick=()=>{activeCat=c;document.getElementById('search').value='';renderCatTabs();renderPicker('');};
+    catTabsEl.appendChild(b);
+  }
+}
+function pill(c,it){
+  const p=document.createElement('div');
+  const isAdded=selected.some(s=>s.catNum===c&&s.num===it.num);
+  p.className='pill'+(isAdded?' added':'');
+  p.innerHTML='<span class="num">'+it.num+'</span>'+it.name;
+  if(!isAdded) p.onclick=()=>addIngredient(c,it);
+  return p;
+}
+function renderPicker(filter){
+  filter=(filter||'').toLowerCase().trim();
+  pickerEl.innerHTML='';
+  catTabsEl.style.opacity=filter?'.4':'1';
+  if(filter){
+    // search across every category, grouped
+    let any=false;
+    for(let c=1;c<=9;c++){
+      const items=(ingData[c]||[]).filter(it=>it.name.toLowerCase().includes(filter));
+      if(!items.length) continue;
+      any=true;
+      const lbl=document.createElement('div');lbl.className='grouplabel';lbl.textContent=CAT_NAMES[c-1];
+      const wrap=document.createElement('div');wrap.className='cat-items';
+      items.forEach(it=>wrap.appendChild(pill(c,it)));
+      pickerEl.appendChild(lbl);pickerEl.appendChild(wrap);
+    }
+    if(!any){const e=document.createElement('p');e.className='hint';e.textContent='No matches.';pickerEl.appendChild(e);}
+    return;
+  }
+  const items=ingData[activeCat]||[];
+  if(!items.length){
+    const e=document.createElement('p');e.className='hint';
+    e.innerHTML='No ingredients loaded for <b>'+CAT_NAMES[activeCat-1]+'</b>. Add them on the '+
+      '<b>My Ingredients</b> tab.';
+    pickerEl.appendChild(e);return;
+  }
+  const wrap=document.createElement('div');wrap.className='cat-items';
+  items.forEach(it=>wrap.appendChild(pill(activeCat,it)));
+  pickerEl.appendChild(wrap);
+}
+function addIngredient(c,it){
+  if(selected.length>=10){flashCount();return;}
+  selected.push({catNum:c,cat:CAT_NAMES[c-1],num:it.num,name:it.name});
+  renderSelected();renderPicker(document.getElementById('search').value);generate();
+}
+function removeIngredient(i){selected.splice(i,1);renderSelected();renderPicker(document.getElementById('search').value);generate();}
+function renderSelected(){
+  const el=document.getElementById('selected');
+  el.innerHTML='';
+  document.getElementById('selHint').style.display=selected.length?'none':'block';
+  selected.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.className='sel-row';
+    row.innerHTML='<span class="grow">'+s.name+'</span>'+
+      '<span class="cmd">cat '+s.catNum+' → '+s.num+'</span>'+
+      '<button title="remove">✕</button>';
+    row.querySelector('button').onclick=()=>removeIngredient(i);
+    el.appendChild(row);
+  });
+  const cnt=document.getElementById('count');
+  cnt.textContent='('+selected.length+' / 10)';
+  cnt.className='count'+(selected.length>=10?' full':'');
+}
+let flashT;
+function flashCount(){const c=document.getElementById('count');c.classList.add('full');clearTimeout(flashT);flashT=setTimeout(()=>c.classList.toggle('full',selected.length>=10),600);}
+
+function fillSelect(id,arr){
+  const s=document.getElementById(id);s.innerHTML='';
+  arr.forEach(it=>{const o=document.createElement('option');o.value=it.num;o.textContent=it.num+'. '+it.name;s.appendChild(o);});
+}
+function fillPres(){const s=document.getElementById('pres');s.innerHTML='';PRESENTATION.forEach((n,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=(i+1)+'. '+n;if(n==='Single')o.selected=true;s.appendChild(o);});}
+
+/* ---------- generate commands ---------- */
+let lastInputs=[],lastAnnot=[];
+function generate(){
+  const out=document.getElementById('output');
+  const warn=document.getElementById('warnings');
+  const methodSel=document.getElementById('method');
+  const tasteSel=document.getElementById('taste');
+  const presSel=document.getElementById('pres');
+  const name=document.getElementById('name').value.trim();
+  const desc=document.getElementById('desc').value.trim();
+
+  const methodName=methodSel.options[methodSel.selectedIndex]?methodSel.options[methodSel.selectedIndex].textContent.replace(/^\d+\.\s*/,''):'';
+  const tasteName=tasteSel.options[tasteSel.selectedIndex]?tasteSel.options[tasteSel.selectedIndex].textContent.replace(/^\d+\.\s*/,''):'';
+  const presName=PRESENTATION[presSel.value-1]||'';
+
+  const steps=[]; // {inp,ann}
+  steps.push({inp:'1',ann:'Manage recipes'});
+  steps.push({inp:'#',ann:"Add new recipe (the last option in your recipe list — pick its number)"});
+  selected.forEach(s=>{
+    steps.push({inp:String(s.catNum),ann:'Category: '+s.cat});
+    steps.push({inp:String(s.num),ann:s.name});
+  });
+  if(selected.length>=10){
+    steps.push({inp:'2',ann:'At 10 ingredients (max) the menu auto-advances — press 2 to continue'});
+  } else {
+    steps.push({inp:'11',ann:'Done with ingredients'});
+  }
+  steps.push({inp:String(methodSel.value),ann:'Cooking method: '+methodName});
+  steps.push({inp:String(tasteSel.value),ann:'Primary taste: '+tasteName});
+  steps.push({inp:desc||'(type your description)',ann:'Description'});
+  steps.push({inp:String(presSel.value),ann:'Presentation: '+presName});
+  steps.push({inp:name||'(type the name)',ann:'Name  →  '+presName+' '+(name||'...')});
+
+  out.innerHTML='';
+  steps.forEach(st=>{
+    const d=document.createElement('div');d.className='step';
+    d.innerHTML='<span class="inp">'+escapeHtml(st.inp)+'</span><span class="ann">'+escapeHtml(st.ann)+'</span>';
+    out.appendChild(d);
+  });
+
+  lastInputs=steps.map(s=>s.inp);
+  lastAnnot=steps.map(s=>s.inp+(s.ann?'    ← '+s.ann:''));
+
+  // warnings
+  const w=[];
+  if(selected.length===0) w.push('Add at least one ingredient.');
+  if(!methodSel.value) w.push('Load your cooking methods on the Methods & Tastes tab.');
+  if(!name) w.push('Enter a name (blank cancels the recipe in-game).');
+  if(/[^\w\s]/.test(name)) w.push('Name contains punctuation — the game asks for none.');
+  if(name.length>40) w.push('Name is over 40 characters ('+name.length+').');
+  if(!desc) w.push('Enter a description (blank cancels the recipe in-game).');
+  if(desc.length>500) w.push('Description is over 500 characters ('+desc.length+').');
+  warn.innerHTML=w.length?('⚠ '+w.join('<br>⚠ ')):'<span class="ok">✓ Ready to cook.</span>';
+}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------- lists tab (single smart paste) ---------- */
+function loadPaste(){
+  const txt=document.getElementById('pasteAll').value;
+  const report=document.getElementById('loadReport');
+  if(!txt.trim()){report.textContent='Paste some game text first.';return;}
+  const found=parseSinglePaste(txt);
+  const cats=Object.keys(found).map(Number).sort((a,b)=>a-b);
+  if(!cats.length){
+    report.innerHTML='<span style="color:var(--danger)">Couldn\'t find any ingredient lists. Make sure the paste '+
+      'includes the category menu choices and the <code>SELECT INGREDIENT</code> screens.</span>';
+    return;
+  }
+  cats.forEach(c=>{ingData[c]=found[c];});
+  save(LS.ing,ingData);
+  selected=selected.filter(s=>(ingData[s.catNum]||[]).some(x=>x.num===s.num&&x.name===s.name));
+  renderPicker(document.getElementById('search').value);renderSelected();generate();
+  report.innerHTML='<span class="ok">✓ Loaded:</span> '+cats.map(c=>CAT_NAMES[c-1]+' ('+found[c].length+')').join(', ');
+  const msg=document.getElementById('savedMsg');msg.textContent='Saved ✓';setTimeout(()=>msg.textContent='',1800);
+}
+function resetLists(){
+  ingData=null;localStorage.removeItem(LS.ing);ensureDefaults();
+  document.getElementById('pasteAll').value='';
+  document.getElementById('loadReport').textContent='';
+  renderPicker(document.getElementById('search').value);renderSelected();generate();
+  const msg=document.getElementById('savedMsg');msg.textContent='Cleared ✓';setTimeout(()=>msg.textContent='',1800);
+}
+
+/* ---------- methods & tastes tab ---------- */
+function renderMt(){
+  document.getElementById('ed_methods').value=listToText(methodsData);
+  document.getElementById('ed_tastes').value=listToText(tastesData);
+}
+function saveMt(){
+  const m=parseList(document.getElementById('ed_methods').value);
+  const t=parseList(document.getElementById('ed_tastes').value);
+  if(m.length)methodsData=m;if(t.length)tastesData=t;
+  save(LS.methods,methodsData);save(LS.tastes,tastesData);
+  fillSelect('method',methodsData);fillSelect('taste',tastesData);generate();
+  const msg=document.getElementById('savedMt');msg.textContent='Saved ✓';setTimeout(()=>msg.textContent='',1800);
+}
+function resetMt(){
+  methodsData=null;tastesData=null;localStorage.removeItem(LS.methods);localStorage.removeItem(LS.tastes);
+  ensureDefaults();renderMt();fillSelect('method',methodsData);fillSelect('taste',tastesData);generate();
+  const msg=document.getElementById('savedMt');msg.textContent='Reset ✓';setTimeout(()=>msg.textContent='',1800);
+}
+
+/* ---------- copy ---------- */
+function copyText(t,btn){
+  navigator.clipboard.writeText(t).then(()=>{const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1400);})
+  .catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1400);});
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.view).classList.add('active');
+  };
+});
+
+/* ---------- wire up ---------- */
+document.getElementById('search').addEventListener('input',e=>renderPicker(e.target.value));
+['method','taste','pres','name','desc'].forEach(id=>document.getElementById(id).addEventListener('input',generate));
+document.getElementById('loadPaste').onclick=loadPaste;
+document.getElementById('resetLists').onclick=resetLists;
+document.getElementById('saveMt').onclick=saveMt;
+document.getElementById('resetMt').onclick=resetMt;
+document.getElementById('copyInputs').onclick=e=>copyText(lastInputs.join('\n'),e.target);
+document.getElementById('copyAnnot').onclick=e=>copyText(lastAnnot.join('\n'),e.target);
+
+/* ---------- init ---------- */
+fillSelect('method',methodsData);
+fillSelect('taste',tastesData);
+fillPres();
+renderCatTabs();renderPicker('');renderSelected();renderMt();generate();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                        
