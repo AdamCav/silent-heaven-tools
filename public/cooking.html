@@ -121,8 +121,7 @@
       <div class="toprow">
         <h2 style="margin:0">3. Commands to type</h2>
         <div class="copybtns">
-          <button class="btn ghost" id="copyInputs">Copy inputs only</button>
-          <button class="btn" id="copyAnnot">Copy with notes</button>
+          <button class="btn" id="copyInputs">Copy commands</button>
         </div>
       </div>
       <p class="hint">Open the cooking menu in-game, then enter each line below in order (press Enter after each).</p>
@@ -368,8 +367,6 @@ function generate(){
   const presName=PRESENTATION[presSel.value-1]||'';
 
   const steps=[]; // {inp,ann}
-  steps.push({inp:'1',ann:'Manage recipes'});
-  steps.push({inp:'#',ann:"Add new recipe (the last option in your recipe list — pick its number)"});
   selected.forEach(s=>{
     steps.push({inp:String(s.catNum),ann:'Category: '+s.cat});
     steps.push({inp:String(s.num),ann:s.name});
@@ -478,7 +475,6 @@ document.getElementById('resetLists').onclick=resetLists;
 document.getElementById('saveMt').onclick=saveMt;
 document.getElementById('resetMt').onclick=resetMt;
 document.getElementById('copyInputs').onclick=e=>copyText(lastInputs.join('\n'),e.target);
-document.getElementById('copyAnnot').onclick=e=>copyText(lastAnnot.join('\n'),e.target);
 
 /* ---------- init ---------- */
 fillSelect('method',methodsData);
@@ -488,4 +484,4 @@ renderCatTabs();renderPicker('');renderSelected();renderMt();generate();
 </script>
 </body>
 </html>
-                                                                                                                                                                                                                                        
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
