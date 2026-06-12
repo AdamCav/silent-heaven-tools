@@ -60,7 +60,7 @@ function ArtTools(props) {
     const artOutput = convertTextToColor(art)
     console.log(artOutput)
     return (
-        <div style={{backgroundColor: 'black',
+        <div style={{backgroundColor: 'var(--bg)',
         fontFamily: 'monospace',
         position: 'fixed',
         top: '42px',
@@ -68,9 +68,9 @@ function ArtTools(props) {
         left: '0',
         right: '0',
         overflow: 'auto',
-        color: 'rgb(155,155,155)'}}>
+        color: 'var(--text)'}}>
             <div style={{display:'flex', justifyContent: 'space-between'}}>
-      <textarea style={{width:'60%', minWidth:'60%', height:'300px', background:'black', color:'antiquewhite'}} id={id} value={art} onInput={e => setArt(e.target.value)}/>
+      <textarea style={{width:'60%', minWidth:'60%', height:'300px', background:'var(--field-bg)', color:'var(--field-text)'}} id={id} value={art} onInput={e => setArt(e.target.value)}/>
       <div style={{color:'black'}}>
         {generateColorButtons().map(button=>button)}
         </div>
