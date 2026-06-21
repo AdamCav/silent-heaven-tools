@@ -85,7 +85,7 @@
 <body>
 <header>
   <h1>Drug Synthesis Command Builder</h1>
-  <p>Pick an administration method, a reactant compound, a temperature and an imprint &mdash; get the exact <code>make drug</code> command to paste in-game.</p>
+  <p>Pick an administration method, a reactant compound, a temperature and a label, then get the exact <code>make drug</code> command to paste in-game.</p>
 </header>
 
 <div class="tabs">
@@ -104,8 +104,8 @@
           <label>Administration method</label>
           <select id="mode"></select>
           <div class="row2">
-            <div><label>Reactant &mdash; start compound</label><select id="start"></select></div>
-            <div><label>Reactant &mdash; end compound</label><select id="end"></select></div>
+            <div><label>Reactant start compound</label><select id="start"></select></div>
+            <div><label>Reactant end compound</label><select id="end"></select></div>
           </div>
           <label>Synthesis temperature</label>
           <select id="temp"></select>
@@ -116,15 +116,15 @@
       <div>
         <div class="card">
           <h2>Reactant preview</h2>
-          <p class="hint" style="font-size:13.5px">Reactive compound: <b id="compoundPreview">&mdash;</b></p>
-          <p class="hint" style="font-size:13.5px">Administration: <span id="modePreview">&mdash;</span></p>
-          <p class="hint" style="font-size:13.5px">Temperature: <span id="tempPreview">&mdash;</span></p>
-          <p class="hint" style="font-size:13.5px">Label: <span id="imprintPreview">&mdash;</span></p>
+          <p class="hint" style="font-size:13.5px">Reactive compound: <b id="compoundPreview">...</b></p>
+          <p class="hint" style="font-size:13.5px">Administration: <span id="modePreview">...</span></p>
+          <p class="hint" style="font-size:13.5px">Temperature: <span id="tempPreview">...</span></p>
+          <p class="hint" style="font-size:13.5px">Label: <span id="imprintPreview">...</span></p>
         </div>
         <div class="card">
           <h2>2. Save this recipe</h2>
           <p class="hint" style="margin-top:0">Saved under its label. Add a label above to name it.</p>
-          <label>Note <span class="hint" style="text-transform:none">(personal &mdash; not used in-game)</span></label>
+          <label>Note <span class="hint" style="text-transform:none">(personal, not used in-game)</span></label>
           <textarea id="recNote" maxlength="1000" placeholder="Anything you want to remember about this one..."></textarea>
           <div class="toprow" style="margin-top:10px">
             <button class="btn" id="saveRecipe">Save recipe</button>
@@ -167,13 +167,13 @@
       <p class="hint" style="font-size:13.5px;line-height:1.6">
         This mirrors the in-game chemistry menu. Pick an <b>administration method</b>, the <b>start</b> and
         <b>end</b> halves of your reactant compound, a <b>synthesis temperature</b>, and an optional
-        <b>imprint</b>. Unlike cooking, the drug types and chemicals are fixed (not tied to any skill), so
+        <b>label</b>. Unlike cooking, the drug types and chemicals are fixed (not tied to any skill), so
         the lists are built in.<br><br>
-        The <b>Command to type</b> box gives you the inputs one per line &mdash;
+        The <b>Command to type</b> box gives you the inputs one per line:
         <code>make drug</code>, then the menu numbers for each choice, then <code>yes</code> to confirm.
-        A blank imprint becomes a single <code>.</code> to keep the drug unlabeled. The breakdown under the
+        A blank label becomes a single <code>.</code> to keep the drug unlabeled. The breakdown under the
         command shows which line maps to which choice, so you can confirm it matches the in-game flow.<br><br>
-        Saved recipes and their notes stay in this browser. The note is yours &mdash; it's never part of the
+        Saved recipes and their notes stay in this browser. The note is yours; it's never part of the
         command.
       </p>
     </div>
@@ -230,7 +230,7 @@ function generate(){
   document.getElementById('tempPreview').textContent=TEMP[tempIdx-1];
   document.getElementById('imprintPreview').textContent=imprint?imprint:'(unlabeled)';
 
-  // annotated breakdown — each entry is one input line of the in-game flow
+  // annotated breakdown: each entry is one input line of the in-game flow
   const steps=[
     {tok:'make drug',ann:'start synthesis'},
     {tok:String(modeIdx),ann:'Administration: '+MODES[modeIdx-1]},
@@ -255,8 +255,8 @@ function generate(){
   // warnings
   const w=[];
   const stripped=(rawImprint||'').replace(/[^A-Za-z0-9]/g,'');
-  if(rawImprint && stripped!==rawImprint) w.push('Label can only use letters and numbers — other characters are dropped in-game.');
-  if(stripped.length>8) w.push('Label is over 8 characters — the game keeps only the first 8 ("'+imprint+'").');
+  if(rawImprint && stripped!==rawImprint) w.push('Label can only use letters and numbers; other characters are dropped in-game.');
+  if(stripped.length>8) w.push('Label is over 8 characters; the game keeps only the first 8 ("'+imprint+'").');
   document.getElementById('warnings').innerHTML=w.length?('⚠ '+w.map(escapeHtml).join('<br>⚠ ')):'<span class="ok">✓ Ready to synthesize.</span>';
 }
 

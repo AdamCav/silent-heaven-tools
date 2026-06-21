@@ -96,7 +96,7 @@
 <body>
 <header>
   <h1>Recipe Command Builder</h1>
-  <p>Pick your ingredients, method, taste and presentation &mdash; get the exact menu inputs to type in-game.</p>
+  <p>Pick your ingredients, method, taste and presentation, then get the exact menu inputs to type in-game.</p>
 </header>
 
 <div class="tabs">
@@ -158,9 +158,9 @@
       <h2>Load your ingredients</h2>
       <p class="hint">Ingredient numbers depend on your character's Cooking skill, so they differ per character.
         In-game, open <b>Add new recipe</b> and step through each category (pick a category number, then press
-        <code>x</code> to go back) so every <code>SELECT INGREDIENT</code> list scrolls past &mdash; like the
+        <code>x</code> to go back) so every <code>SELECT INGREDIENT</code> list scrolls past, like the
         transcript you'd copy from your client. Paste that whole chunk below and it sorts each list into the right
-        category automatically &mdash; using the category numbers you typed when present, otherwise assuming the lists
+        category automatically, using the category numbers you typed when present, otherwise assuming the lists
         appear in category order (Basics first, Condiments last). Nothing is loaded until you paste your own, so it
         only ever shows ingredients your character has actually seen.</p>
       <label>Paste game text</label>
@@ -178,8 +178,8 @@
   <section class="view" id="mt">
     <div class="card">
       <h2>Cooking methods &amp; tastes</h2>
-      <p class="hint">Cooking methods are character-specific (they depend on your Cooking skill), so none are bundled &mdash;
-        paste your in-game <code>COOKING METHOD</code> list into the box below and save. Tastes are a fixed list and come
+      <p class="hint">Cooking methods are character-specific (they depend on your Cooking skill), so none are bundled.
+        Paste your in-game <code>COOKING METHOD</code> list into the box below and save. Tastes are a fixed list and come
         pre-filled.</p>
       <div class="toprow">
         <button class="btn" id="saveMt">Save</button>
@@ -395,7 +395,7 @@ function generate(){
     steps.push({inp:String(s.num),ann:s.name});
   });
   if(selected.length>=10){
-    steps.push({inp:'2',ann:'At 10 ingredients (max) the menu auto-advances — press 2 to continue'});
+    steps.push({inp:'2',ann:'At 10 ingredients (max) the menu auto-advances, press 2 to continue'});
   } else {
     steps.push({inp:'11',ann:'Done with ingredients'});
   }
@@ -420,7 +420,7 @@ function generate(){
   if(selected.length===0) w.push('Add at least one ingredient.');
   if(!methodSel.value) w.push('Load your cooking methods on the Methods & Tastes tab.');
   if(!name) w.push('Enter a name (blank cancels the recipe in-game).');
-  if(/[^\w\s]/.test(name)) w.push('Name contains punctuation — the game asks for none.');
+  if(/[^\w\s]/.test(name)) w.push('Name contains punctuation; the game asks for none.');
   if(name.length>40) w.push('Name is over 40 characters ('+name.length+').');
   if(!desc) w.push('Enter a description (blank cancels the recipe in-game).');
   if(desc.length>500) w.push('Description is over 500 characters ('+desc.length+').');

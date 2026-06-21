@@ -55,7 +55,7 @@ function Layout({ theme, toggleTheme }) {
       </div>
       <button
         onClick={toggleTheme}
-        title={'Theme: ' + THEME_LABEL[theme] + ' — click for ' + THEME_LABEL[nextTheme]}
+        title={'Theme: ' + THEME_LABEL[theme] + ', click for ' + THEME_LABEL[nextTheme]}
         aria-label="Switch theme"
         style={{
           position: 'fixed', bottom: '12px', left: '12px', width: '26px', height: '26px',
