@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import ArtTools from './component/ArtTools';
 import ClothingTools from './component/ClothingTools';
 import CookingTools from './component/CookingTools';
+import ChemistryTools from './component/ChemistryTools';
 import { Routes, Route, HashRouter, NavLink, Outlet } from "react-router-dom";
 
 const NAV_HEIGHT = 42;
@@ -47,6 +48,7 @@ function Layout({ theme, toggleTheme }) {
         <NavLink to="/clothes" style={navLinkStyle}>#clothes</NavLink>
         <NavLink to="/art" style={navLinkStyle}>#art</NavLink>
         <NavLink to="/cooking" style={navLinkStyle}>#cooking</NavLink>
+        <NavLink to="/chemistry" style={navLinkStyle}>#chemistry</NavLink>
       </nav>
       <div style={{ paddingTop: NAV_HEIGHT }}>
         <Outlet />
@@ -87,6 +89,7 @@ function App() {
           <Route path="/clothes" element={<ClothingTools />} />
           <Route path="/art" element={<ArtTools />} />
           <Route path="/cooking" element={<CookingTools theme={theme} />} />
+          <Route path="/chemistry" element={<ChemistryTools theme={theme} />} />
         </Route>
       </Routes>
     </HashRouter>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drug Synthesis Command Builder</title>
+<script>
+  // Theme: ?theme=light|dark|haven from the host page, else the OS preference. Set before paint.
+  (function(){
+    try{
+      var valid={light:1,dark:1,haven:1};
+      var p=new URLSearchParams(location.search).get('theme');
+      var t=(p&&valid[p])?p:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'haven':'light');
+      document.documentElement.setAttribute('data-theme', t);
+    }catch(e){document.documentElement.setAttribute('data-theme','haven');}
+  })();
+</script>
+<style>
+  /* "haven" = the original warm look, shared with the cooking tool. */
+  :root, :root[data-theme="haven"]{
+    --bg:#1d1a17; --panel:#272320; --panel2:#312c27; --line:#403a33;
+    --text:#ece3d8; --muted:#a99e90; --accent:#e0a458; --accent2:#7fae6b;
+    --danger:#d77a6b; --chip:#3a342e; --out-bg:#15120f;
+  }
+  :root[data-theme="light"]{
+    --bg:#faf8f5; --panel:#ffffff; --panel2:#f1ece6; --line:#d8cfc4;
+    --text:#2a241e; --muted:#6b6258; --accent:#b9722c; --accent2:#4e7a3c;
+    --danger:#b5503f; --chip:#ece6df; --out-bg:#f4efe8;
+  }
+  :root[data-theme="dark"]{
+    --bg:#16181c; --panel:#1f2228; --panel2:#262a31; --line:#363b44;
+    --text:#e6e8ec; --muted:#9aa0aa; --accent:#6ea8fe; --accent2:#5cc08a;
+    --danger:#e06c75; --chip:#2b2f37; --out-bg:#0f1115;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.45}
+  header{padding:18px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+  h1{margin:0;font-size:20px;letter-spacing:.3px}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .tabs{display:flex;gap:4px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tab{padding:10px 16px;cursor:pointer;color:var(--muted);border:none;background:none;font-size:14px;border-bottom:2px solid transparent}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  main{max-width:1100px;margin:0 auto;padding:20px}
+  .view{display:none}
+  .view.active{display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}
+  .card h2{margin:0 0 10px;font-size:15px;color:var(--accent)}
+  label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.4px}
+  select,input[type=text],textarea{width:100%;background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);border-radius:7px;padding:9px 10px;font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:70px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button.btn{background:var(--accent);color:#231d16;border:none;border-radius:7px;padding:9px 14px;
+    font-weight:600;cursor:pointer;font-size:13.5px}
+  button.btn:hover{filter:brightness(1.08)}
+  button.ghost{background:none;border:1px solid var(--line);color:var(--text)}
+  button.danger{background:none;border:1px solid var(--line);color:var(--danger)}
+  button.danger:hover{border-color:var(--danger)}
+  .out{background:var(--out-bg);border:1px solid var(--line);border-radius:8px;padding:14px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:15px;white-space:pre-wrap;word-break:break-word}
+  .breakdown{margin-top:12px}
+  .breakdown .step{display:flex;gap:10px;padding:1px 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px}
+  .breakdown .tok{color:var(--accent);font-weight:600;min-width:64px}
+  .breakdown .ann{color:var(--muted)}
+  .warn{color:var(--danger);font-size:12.5px;margin-top:10px}
+  .ok{color:var(--accent2)}
+  .toprow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .hint{font-size:12.5px;color:var(--muted);margin:6px 0}
+  .saved{color:var(--accent2);font-size:12.5px;margin-left:8px}
+  .copybtns{display:flex;gap:8px;margin:6px 0;flex-wrap:wrap}
+  code{background:var(--panel2);padding:1px 5px;border-radius:4px}
+  /* saved recipes list */
+  .rec{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px}
+  .rec h3{margin:0 0 4px;font-size:14px;color:var(--text)}
+  .rec .cmd{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--accent);
+    background:var(--out-bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;margin:6px 0;word-break:break-word;white-space:pre-wrap}
+  .rec .note{font-size:12.5px;color:var(--muted);white-space:pre-wrap;margin:6px 0;border-left:2px solid var(--line);padding-left:9px}
+  .rec .recbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .rec .meta{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Drug Synthesis Command Builder</h1>
+  <p>Pick an administration method, a reactant compound, a temperature and an imprint &mdash; get the exact <code>make drug</code> command to paste in-game.</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-view="build">Build</button>
+  <button class="tab" data-view="saved">Saved Recipes <span id="savedCount"></span></button>
+  <button class="tab" data-view="help">Help</button>
+</div>
+
+<main>
+  <!-- BUILD -->
+  <section class="view active" id="build">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>1. Administration &amp; synthesis</h2>
+          <label>Administration method</label>
+          <select id="mode"></select>
+          <div class="row2">
+            <div><label>Reactant &mdash; start compound</label><select id="start"></select></div>
+            <div><label>Reactant &mdash; end compound</label><select id="end"></select></div>
+          </div>
+          <label>Synthesis temperature</label>
+          <select id="temp"></select>
+          <label>Label <span class="hint" style="text-transform:none">(up to 8 alphanumeric, blank = unlabeled)</span></label>
+          <input id="imprint" type="text" maxlength="40" placeholder="bug">
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Reactant preview</h2>
+          <p class="hint" style="font-size:13.5px">Reactive compound: <b id="compoundPreview">&mdash;</b></p>
+          <p class="hint" style="font-size:13.5px">Administration: <span id="modePreview">&mdash;</span></p>
+          <p class="hint" style="font-size:13.5px">Temperature: <span id="tempPreview">&mdash;</span></p>
+          <p class="hint" style="font-size:13.5px">Label: <span id="imprintPreview">&mdash;</span></p>
+        </div>
+        <div class="card">
+          <h2>2. Save this recipe</h2>
+          <p class="hint" style="margin-top:0">Saved under its label. Add a label above to name it.</p>
+          <label>Note <span class="hint" style="text-transform:none">(personal &mdash; not used in-game)</span></label>
+          <textarea id="recNote" maxlength="1000" placeholder="Anything you want to remember about this one..."></textarea>
+          <div class="toprow" style="margin-top:10px">
+            <button class="btn" id="saveRecipe">Save recipe</button>
+            <span class="saved" id="saveMsg"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toprow">
+        <h2 style="margin:0">3. Command to type</h2>
+        <div class="copybtns">
+          <button class="btn" id="copyCmd">Copy command</button>
+        </div>
+      </div>
+      <p class="hint">Open the chemistry menu in-game, then enter each line below in order (press Enter after each).</p>
+      <div class="out" id="output"></div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="warn" id="warnings"></div>
+    </div>
+  </section>
+
+  <!-- SAVED -->
+  <section class="view" id="saved">
+    <div class="card">
+      <div class="toprow">
+        <h2 style="margin:0">Saved recipes</h2>
+        <button class="btn ghost" id="clearAll">Clear all</button>
+      </div>
+      <p class="hint">Stored in this browser only (localStorage). Load one to drop it back into the builder, copy its command, or delete it.</p>
+      <div id="recList"></div>
+    </div>
+  </section>
+
+  <!-- HELP -->
+  <section class="view" id="help">
+    <div class="card">
+      <h2>How it works</h2>
+      <p class="hint" style="font-size:13.5px;line-height:1.6">
+        This mirrors the in-game chemistry menu. Pick an <b>administration method</b>, the <b>start</b> and
+        <b>end</b> halves of your reactant compound, a <b>synthesis temperature</b>, and an optional
+        <b>imprint</b>. Unlike cooking, the drug types and chemicals are fixed (not tied to any skill), so
+        the lists are built in.<br><br>
+        The <b>Command to type</b> box gives you the inputs one per line &mdash;
+        <code>make drug</code>, then the menu numbers for each choice, then <code>yes</code> to confirm.
+        A blank imprint becomes a single <code>.</code> to keep the drug unlabeled. The breakdown under the
+        command shows which line maps to which choice, so you can confirm it matches the in-game flow.<br><br>
+        Saved recipes and their notes stay in this browser. The note is yours &mdash; it's never part of the
+        command.
+      </p>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------- fixed data (skill-independent) ---------- */
+const MODES=["Pill (Swallowed)","Gummy (Chewed)","Square (Dissolved on tongue)","Cigarette (Smoked)",
+  "Syringe (Injected into waist)","Patch (Applied on arm)","Popper (Inhaled through nose)",
+  "Eyedrop (Dripped onto eye)","Powder (Snorted through nose)","Cream (Rubbed on body)"];
+const START=["Acetic","Anthanilic","Benzyl","Bromo","Butyl","Calcium","Carbonyl","Chloro","Citric","Cyclo",
+  "Dextro","Dichloro","Ethyl","Fluoro","Hydra","Hydroxyl","Indanyl","Keto","Lithium","Magnesium","Mercuric",
+  "Methyl","Nitro","Oxy","Phenyl","Phosphorous","Potassium","Sodium","Sulphur"];
+const END=["Acetate","Amine","Amphetamine","Anhydride","Benzene","Bicarbonate","Butamine","Chloride","Cyanide",
+  "Dichromate","Ethane","Ether","Fluorine","Hydramine","Hydride","Ketamine","Morphine","Nitrite","Oxide",
+  "Permanganate","Peroxide","Phosphate","Propamine","Pseudoephedrine","Sergamide","Sorbate","Sulfite",
+  "Thylamine","Tryptamine"];
+const TEMP=["Freezing","Room temperature","Scalding"];
+
+/* ---------- storage ---------- */
+const LS_RECIPES='chem_recipes_v1';
+function loadRecipes(){try{const v=localStorage.getItem(LS_RECIPES);return v?JSON.parse(v):[];}catch(e){return [];}}
+function saveRecipes(arr){try{localStorage.setItem(LS_RECIPES,JSON.stringify(arr));}catch(e){}}
+let recipes=loadRecipes();
+
+/* ---------- helpers ---------- */
+function fillSelect(id,arr){
+  const s=document.getElementById(id);s.innerHTML='';
+  arr.forEach((name,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=(i+1)+'. '+name;s.appendChild(o);});
+}
+function escapeHtml(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+// game keeps up to 8 alphanumeric characters; extras are cut off
+function effectiveImprint(raw){
+  const clean=(raw||'').replace(/[^A-Za-z0-9]/g,'').slice(0,8);
+  return clean;
+}
+
+/* ---------- generate ---------- */
+let lastCmd='';
+function generate(){
+  const modeIdx=+document.getElementById('mode').value;
+  const startIdx=+document.getElementById('start').value;
+  const endIdx=+document.getElementById('end').value;
+  const tempIdx=+document.getElementById('temp').value;
+  const rawImprint=document.getElementById('imprint').value;
+  const imprint=effectiveImprint(rawImprint);
+  const imprintToken=imprint||'.';
+
+  // previews
+  const compound=START[startIdx-1]+' '+END[endIdx-1].toLowerCase();
+  document.getElementById('compoundPreview').textContent=compound;
+  document.getElementById('modePreview').textContent=MODES[modeIdx-1];
+  document.getElementById('tempPreview').textContent=TEMP[tempIdx-1];
+  document.getElementById('imprintPreview').textContent=imprint?imprint:'(unlabeled)';
+
+  // annotated breakdown — each entry is one input line of the in-game flow
+  const steps=[
+    {tok:'make drug',ann:'start synthesis'},
+    {tok:String(modeIdx),ann:'Administration: '+MODES[modeIdx-1]},
+    {tok:String(startIdx),ann:'Start compound: '+START[startIdx-1]},
+    {tok:String(endIdx),ann:'End compound: '+END[endIdx-1]},
+    {tok:String(tempIdx),ann:'Temperature: '+TEMP[tempIdx-1]},
+    {tok:imprintToken,ann:imprint?('Label: '+imprint):'Label: none (period keeps it unlabeled)'},
+    {tok:'yes',ann:'Confirm synthesis'}
+  ];
+
+  // command: one token per line (matches entering each input in turn)
+  lastCmd=steps.map(s=>s.tok).join('\n');
+  document.getElementById('output').textContent=lastCmd;
+
+  const bd=document.getElementById('breakdown');bd.innerHTML='';
+  steps.forEach(st=>{
+    const d=document.createElement('div');d.className='step';
+    d.innerHTML='<span class="tok">'+escapeHtml(st.tok)+'</span><span class="ann">'+escapeHtml(st.ann)+'</span>';
+    bd.appendChild(d);
+  });
+
+  // warnings
+  const w=[];
+  const stripped=(rawImprint||'').replace(/[^A-Za-z0-9]/g,'');
+  if(rawImprint && stripped!==rawImprint) w.push('Label can only use letters and numbers — other characters are dropped in-game.');
+  if(stripped.length>8) w.push('Label is over 8 characters — the game keeps only the first 8 ("'+imprint+'").');
+  document.getElementById('warnings').innerHTML=w.length?('⚠ '+w.map(escapeHtml).join('<br>⚠ ')):'<span class="ok">✓ Ready to synthesize.</span>';
+}
+
+/* ---------- copy ---------- */
+function copyText(t,btn){
+  navigator.clipboard.writeText(t).then(()=>{const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1400);})
+  .catch(()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();const o=btn.textContent;btn.textContent='Copied ✓';setTimeout(()=>btn.textContent=o,1400);});
+}
+
+/* ---------- recipes ---------- */
+function currentRecipe(){
+  return {
+    mode:+document.getElementById('mode').value,
+    start:+document.getElementById('start').value,
+    end:+document.getElementById('end').value,
+    temp:+document.getElementById('temp').value,
+    imprint:document.getElementById('imprint').value
+  };
+}
+function saveRecipe(){
+  const msg=document.getElementById('saveMsg');
+  const rec=currentRecipe();
+  rec.name=effectiveImprint(rec.imprint)||'(unlabeled)';
+  rec.note=document.getElementById('recNote').value;
+  rec.cmd=lastCmd;
+  rec.savedAt=Date.now();
+  recipes.unshift(rec);
+  saveRecipes(recipes);
+  renderRecipes();
+  msg.style.color='';msg.textContent='Saved ✓';setTimeout(()=>msg.textContent='',1800);
+}
+function loadRecipe(i){
+  const r=recipes[i];if(!r)return;
+  document.getElementById('mode').value=r.mode;
+  document.getElementById('start').value=r.start;
+  document.getElementById('end').value=r.end;
+  document.getElementById('temp').value=r.temp;
+  document.getElementById('imprint').value=r.imprint||'';
+  document.getElementById('recNote').value=r.note||'';
+  generate();
+  // jump to the build tab
+  document.querySelector('.tab[data-view="build"]').click();
+}
+function deleteRecipe(i){
+  recipes.splice(i,1);saveRecipes(recipes);renderRecipes();
+}
+function clearAll(){
+  if(!recipes.length)return;
+  if(!confirm('Delete all saved recipes? This cannot be undone.'))return;
+  recipes=[];saveRecipes(recipes);renderRecipes();
+}
+function fmtDate(ts){try{return new Date(ts).toLocaleString();}catch(e){return '';}}
+function renderRecipes(){
+  const list=document.getElementById('recList');
+  const cnt=document.getElementById('savedCount');
+  cnt.textContent=recipes.length?('('+recipes.length+')'):'';
+  list.innerHTML='';
+  if(!recipes.length){
+    const e=document.createElement('p');e.className='hint';e.textContent='No saved recipes yet. Build one and hit “Save recipe”.';
+    list.appendChild(e);return;
+  }
+  recipes.forEach((r,i)=>{
+    const compound=START[r.start-1]+' '+END[r.end-1].toLowerCase();
+    const div=document.createElement('div');div.className='rec';
+    div.innerHTML=
+      '<h3>'+escapeHtml(r.name)+'</h3>'+
+      '<div class="meta">'+escapeHtml(MODES[r.mode-1])+' · '+escapeHtml(compound)+' · '+escapeHtml(TEMP[r.temp-1])+'</div>'+
+      '<div class="cmd">'+escapeHtml(r.cmd||'')+'</div>'+
+      (r.note?('<div class="note">'+escapeHtml(r.note)+'</div>'):'')+
+      '<div class="meta">saved '+escapeHtml(fmtDate(r.savedAt))+'</div>'+
+      '<div class="recbtns">'+
+        '<button class="btn" data-act="load">Load</button>'+
+        '<button class="btn ghost" data-act="copy">Copy command</button>'+
+        '<button class="danger" data-act="del">Delete</button>'+
+      '</div>';
+    div.querySelector('[data-act="load"]').onclick=()=>loadRecipe(i);
+    div.querySelector('[data-act="copy"]').onclick=e=>copyText(r.cmd||'',e.target);
+    div.querySelector('[data-act="del"]').onclick=()=>deleteRecipe(i);
+    list.appendChild(div);
+  });
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.view).classList.add('active');
+  };
+});
+
+/* ---------- wire up ---------- */
+['mode','start','end','temp','imprint'].forEach(id=>document.getElementById(id).addEventListener('input',generate));
+document.getElementById('copyCmd').onclick=e=>copyText(lastCmd,e.target);
+document.getElementById('saveRecipe').onclick=saveRecipe;
+document.getElementById('clearAll').onclick=clearAll;
+
+/* ---------- init ---------- */
+fillSelect('mode',MODES);
+fillSelect('start',START);
+fillSelect('end',END);
+fillSelect('temp',TEMP);
+generate();
+renderRecipes();
+</script>
+</body>
+</html>
